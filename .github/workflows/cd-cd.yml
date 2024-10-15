@@ -1,0 +1,72 @@
+name: HTML CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - development
+  pull_request:
+    branches:
+      - development
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Build
+        run: echo "Building HTML... (No build needed for static HTML)"
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Test HTML
+        run: echo "Testing HTML file structure..."
+
+  deploy-development:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Deploy to Development
+        run: echo "Deploying HTML file to the development environment..."
+
+  deploy-staging:
+    needs: deploy-development
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/development'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Deploy to Staging
+        run: echo "Deploying HTML file to the staging environment..."
+
+  approval:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - name: Manual approval required
+        uses: fjogeleit/yaml-update-action@v1.3
+        with:
+          tag: 'Approval Required'
+          message: 'Awaiting manual approval to deploy to production.'
+
+  deploy-production:
+    needs: approval
+    runs-on: ubuntu-latest
+    if: github.event.inputs.approve == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Deploy to Production
+        run: echo "Deploying HTML file to the production environment..."
